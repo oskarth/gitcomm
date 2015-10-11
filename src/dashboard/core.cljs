@@ -15,8 +15,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce gh-user (r/atom {}))
+(defonce challenger (r/atom ""))
 (defonce app-state (atom {:text "Hello Oskar!"}))
-
 
 (defn auth-fb! []
  (.authWithOAuthPopup fb-ref "github"
@@ -41,14 +41,33 @@
     [:div.col-right
       [:a.btn.py2 {:href "/"} "About"]]])
 
+(defn authed-component []
+  [:div
+    [:h2.h2-responsive.caps.mt4.mb0.regular "gitcomm"]
+    [:p.h3 "Ready to commit " (get-in @gh-user ["github" "username"]) "?"]
+    [:form
+      [:input {:class "field"
+               :type "text"
+               :value @challenger
+               :placeholder "Another github user"
+               :on-change #(reset! challenger (-> % .-target .-value))}]
+      [:a.h3.btn.btn-primary.black.bg-yellow
+        {:on-click #(req! :challenge!)} "Challenge"]]])
+
+(defn unauthed-component []
+  [:div
+    [:h2.h2-responsive.caps.mt4.mb0.regular "gitcomm"]
+    [:p.h3 "A game of commitment"]
+    [:a.h3.btn.btn-primary.mb4.black.bg-yellow
+      {:on-click #(req! :auth-github!)} "Play with Github"]])
+
 (defn main-component []
   [:header
     (global-nav)
     [:div.center.px2.py4
-      [:h2.h2-responsive.caps.mt4.mb0.regular "gitcomm"]
-      [:p.h3 "A game of commitment"]
-      [:a.h3.btn.btn-primary.mb4.black.bg-yellow
-        {:on-click #(req! :auth-github!)} "Play with Github"]]])
+      (if (get @gh-user "github") ;; NOTE: Not a security check
+          (authed-component)
+          (unauthed-component))]])
 
 (defn hello-world []
   [:h1 (:text @app-state)])
