@@ -1,5 +1,7 @@
 (ns ^:figwheel-always gitcomm.core
- (:require [ajax.core :refer [GET POST]]
+ (:require goog.net.XhrIo
+           [goog.net.EventType :refer [SUCCESS ERROR]]
+           [goog.events :refer [listen]]
            [figwheel.client :as fc]
            [reagent.core :as r :refer [atom]]
            [cljsjs.firebase]))
@@ -11,7 +13,21 @@
 
 (def fb-ref (js/Firebase. "https://intense-heat-8207.firebaseio.com"))
 
-;; State
+;; Ajax
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn request [url {:keys [method on-success on-error headers params]}]
+  (let [xhr (goog.net.XhrIo.)
+        str-params (if params (.stringify js/JSON (clj->js params)) nil)
+        default-headers {"Content-Type" "application/json"}]
+    (listen xhr SUCCESS #(on-success (js->clj (.getResponseJson (.-target %)))))
+    (listen xhr ERROR #(on-error {:status (.getStatus (.-target %))}))
+    (.send xhr url method str-params (clj->js (merge headers default-headers)))))
+
+(defn GET [url opts] (request url (assoc opts :method "GET")))
+(defn POST [url opts] (request url (assoc opts :method "POST")))
+(defn PATCH [url opts] (request url (assoc opts :method "PATCH")))
+
+;; State and communication
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defonce gh-user (r/atom {}))
