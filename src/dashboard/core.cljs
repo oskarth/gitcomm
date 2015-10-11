@@ -41,10 +41,16 @@
          (println "Login failed" error)
          (swap! gh-user (fn [_] (js->clj data)))))))
 
+(defn challenge! []
+  (GET (str "https://api.github.com/users/" @challenger)
+    {:on-success #(println %)  ;; TODO: Take to terms page
+     :on-error #(println %)})) ;; TODO: Notify, try again
+
 (defn req!
   "Dispatches a request on key."
   [key]
   (cond (= key :auth-github!) (auth-fb!)
+        (= key :challenge!) (challenge!)
         :else (println "Error, no such key:" key)))
 
 ;; Components
@@ -65,10 +71,10 @@
       [:input {:class "field"
                :type "text"
                :value @challenger
-               :placeholder "Another github user"
+               :placeholder "Enter a Github user"
                :on-change #(reset! challenger (-> % .-target .-value))}]
       [:a.h3.btn.btn-primary.black.bg-yellow
-        {:on-click #(req! :challenge!)} "Challenge"]]])
+        {:on-click #(req! :challenge!)} "Play"]]])
 
 (defn unauthed-component []
   [:div
